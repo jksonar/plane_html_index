@@ -21,6 +21,7 @@ pipeline {
         DEPLOY_CONFIGS = """{
             "dev": {"profile": "develop", "playbook": "/opt/jenkins/playbook/las/las_dev_tomcat.yml", "script": "/opt/scripts/deploy_dev.sh"},
             "uat": {"profile": "uat", "playbook": "/opt/jenkins/playbook/las/las_uat_tomcat.yml", "script": "/opt/scripts/deploy_uat.sh"},
+            "prod": {"profile": "prod", "playbook": "/opt/jenkins/playbook/las/las_prod_tomcat.yml", "script": "/opt/scripts/deploy_prod.sh"},
             "main": {"profile": "main", "playbook": "/opt/jenkins/playbook/las/las_Prod_tomcat.yml", "script": "/opt/scripts/deploy_prod.sh"}
         }"""
     }
