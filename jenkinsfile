@@ -16,8 +16,14 @@ pipeline {
     triggers {
         pollSCM('H/2 * * * *') 
     }
+
+    parameters {
+        choice(name: 'ENV', choices: ['dev', 'main', 'uat', 'prod'], description: 'Select deployment environment')
+    }
     
     environment {
+        DEPLOYMENT_ENV = "${params.ENV}"
+        APP_NAME = "my-app"
         DEPLOY_CONFIGS = """{
             "dev": {"profile": "develop", "playbook": "/opt/jenkins/playbook/las/las_dev_tomcat.yml", "script": "/opt/scripts/deploy_dev.sh"},
             "uat": {"profile": "uat", "playbook": "/opt/jenkins/playbook/las/las_uat_tomcat.yml", "script": "/opt/scripts/deploy_uat.sh"},
@@ -27,11 +33,37 @@ pipeline {
     }
     
     stages {
+        stage('Initialize') {
+            steps {
+                script {
+                    echo "Building for environment: ${DEPLOYMENT_ENV}"
+                    switch (DEPLOYMENT_ENV) {
+                        case 'dev':
+                            env.BRANCH_NAME = 'dev'
+                            env.DEPLOY_URL = 'http://dev.example.com'
+                            break
+                        case 'main':
+                            env.BRANCH_NAME = 'main'
+                            env.DEPLOY_URL = 'http://main.example.com'
+                            break
+                        case 'uat':
+                            env.BRANCH_NAME = 'uat'
+                            env.DEPLOY_URL = 'http://uat.example.com'
+                            break
+                        case 'prod':
+                            env.BRANCH_NAME = 'main'
+                            env.DEPLOY_URL = 'http://prod.example.com'
+                            break
+                    }
+                }
+            }
+        }
         stage("Checkout Code") {
             when {
                 expression { env.BRANCH_NAME in ['dev', 'uat', 'main'] }
             }
             steps {
+                echo "Checking out branch: ${BRANCH_NAME}"
                 checkout([
                     $class: 'GitSCM',
                     branches: [[name: "*/${env.BRANCH_NAME}"]],
@@ -48,6 +80,7 @@ pipeline {
             }
             steps {
                 script {
+                    echo "Deploying ${APP_NAME} to ${DEPLOYMENT_ENV} at ${DEPLOY_URL}"
                     def deployConfigs = readJSON(text: env.DEPLOY_CONFIGS)
                     def branchConfig = deployConfigs[env.BRANCH_NAME]
                     
@@ -68,6 +101,12 @@ pipeline {
     }
     
     post {
+        success {
+            echo "Deployment to ${DEPLOYMENT_ENV} successful!"
+        }
+        failure {
+            echo "Deployment failed for ${DEPLOYMENT_ENV}"
+        }
         always {
             cleanWs()
         }
