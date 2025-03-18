@@ -24,12 +24,6 @@ pipeline {
     environment {
         DEPLOYMENT_ENV = "${params.ENV}"
         APP_NAME = "my-app"
-        DEPLOY_CONFIGS = """{
-            "dev": {"profile": "develop", "playbook": "/opt/jenkins/playbook/las/las_dev_tomcat.yml", "script": "/opt/scripts/deploy_dev.sh"},
-            "uat": {"profile": "uat", "playbook": "/opt/jenkins/playbook/las/las_uat_tomcat.yml", "script": "/opt/scripts/deploy_uat.sh"},
-            "prod": {"profile": "prod", "playbook": "/opt/jenkins/playbook/las/las_prod_tomcat.yml", "script": "/opt/scripts/deploy_prod.sh"},
-            "main": {"profile": "main", "playbook": "/opt/jenkins/playbook/las/las_Prod_tomcat.yml", "script": "/opt/scripts/deploy_prod.sh"}
-        }"""
     }
     
     stages {
@@ -81,20 +75,6 @@ pipeline {
             steps {
                 script {
                     echo "Deploying ${APP_NAME} to ${DEPLOYMENT_ENV} at ${DEPLOY_URL}"
-                    def deployConfigs = readJSON(text: env.DEPLOY_CONFIGS)
-                    def branchConfig = deployConfigs[env.BRANCH_NAME]
-                    
-                    if (!branchConfig) {
-                        error "No deployment configuration found for branch: ${env.BRANCH_NAME}"
-                    }
-
-                    def buildProfile = branchConfig.profile
-                    def playbook = branchConfig.playbook
-                    def deployScript = branchConfig.script
-                    
-                    ansiColor('css') {
-                        sh "${deployScript} ${buildProfile} ${playbook} ${env.WORKSPACE}"
-                    }
                 }
             }
         }
